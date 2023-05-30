@@ -6,10 +6,8 @@ import {
   Param,
   Patch,
   Post,
-  Res,
 } from '@nestjs/common';
 import { CoffeesService } from './coffees.service';
-import { Response } from 'express';
 import { CreateCoffeeDto, UpdateCoffeeDto } from './dto';
 
 @Controller('coffees')
@@ -17,8 +15,8 @@ export class CoffeesController {
   constructor(private readonly coffeesService: CoffeesService) {}
 
   @Get('/')
-  getCoffees(@Res() res: Response) {
-    res.status(200).send(this.coffeesService.findAll());
+  getCoffees() {
+    return this.coffeesService.findAll();
   }
 
   @Get(':id')

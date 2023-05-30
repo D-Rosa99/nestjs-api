@@ -1,28 +1,50 @@
-import { Injectable } from '@nestjs/common';
-import { CoffeeProps } from 'src/interfaces/coffee';
-import { coffees } from 'src/coffees/mock/coffees';
+import { Injectable, NotFoundException } from '@nestjs/common';
 import { CreateCoffeeDto, UpdateCoffeeDto } from './dto';
+import { Coffee } from './entities';
+import { InjectRepository } from '@nestjs/typeorm';
+import { Repository } from 'typeorm';
 
 @Injectable()
 export class CoffeesService {
-  findAll(): CoffeeProps[] {
-    return coffees;
+  constructor(
+    @InjectRepository(Coffee)
+    private readonly coffeeRepository: Repository<Coffee>,
+  ) {}
+
+  async findAll() {
+    return await this.coffeeRepository.find();
   }
 
-  findOne(coffeeId: number): CoffeeProps {
-    return coffees.find((coffee) => coffee.id === coffeeId);
+  async findOne(id: number) {
+    const data = await this.coffeeRepository.findOne({
+      where: { id },
+    });
+
+    if (!data) {
+      throw new NotFoundException('Coffe not found');
+    }
+
+    return data;
   }
 
-  insertOne(coffeeProps: CreateCoffeeDto) {
-    coffees.push({ ...coffeeProps, id: coffees.length + 1 });
-    return 'Coffee register successfully';
+  async insertOne(coffeeData: CreateCoffeeDto) {
+    const data = this.coffeeRepository.create(coffeeData);
+    const dataInserted = await this.coffeeRepository.save(data);
+    return dataInserted;
   }
 
-  updateOne(coffeId: number, updateCoffeeDto: UpdateCoffeeDto): string {
-    return `Se actualizo el cafe ${updateCoffeeDto} de id ${coffeId}`;
+  async updateOne(coffeId: number, updateCoffeeDto: UpdateCoffeeDto) {
+    const data = await this.coffeeRepository.update(coffeId, updateCoffeeDto);
+
+    if (!data.affected) {
+      throw new NotFoundException(`Did not found a coffee with id ${coffeId}`);
+    }
   }
 
-  deleteOne(coffeId: number): string {
-    return `Se elimino el cafe ${coffeId}`;
+  async deleteOne(id: number) {
+    const data = await this.findOne(id);
+
+    this.coffeeRepository.remove(data);
+    return `Row deleted successfully`;
   }
 }
